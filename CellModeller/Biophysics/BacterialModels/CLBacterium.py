@@ -549,7 +549,8 @@ class CLBacterium:
             #print('% 8i    % 8i cells    % 8i contacts    %f hour(s) or %f minute(s) or %f second(s)' % (self.frame_no, self.n_cells, self.n_cts, self.hours_elapsed, self.minutes_elapsed, self.seconds_elapsed))
             print(" ")
             for i in range(100):
-                print(self.cell_centers[i][0]," ",self.cell_centers[i][1], " ",self.cell_dirs[i][0]," ",self.cell_dirs[i][1], " ", self.cell_lens[i])
+                len = self.cell_lens[i]/2
+                print(self.cell_centers[i][0] - (len*self.cell_dirs[i][0])," ",self.cell_centers[i][1] - (len*self.cell_dirs[i][1]), " ",self.cell_centers[i][0] + (len*self.cell_dirs[i][0])," ",self.cell_centers[i][1] + (len*self.cell_dirs[i][1]))
         # pull cells from the device and update simulator
         if self.simulator:
             self.get_cells()
