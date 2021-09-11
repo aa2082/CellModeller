@@ -41,7 +41,7 @@ class CLBacterium:
         self.frame_no = 0
         self.simulator = simulator
         self.regulator = None
-        
+
         self.time_begin = time.time()
         self.seconds_elapsed = 0
         self.minutes_elapsed = 0
@@ -199,7 +199,7 @@ class CLBacterium:
         self.vdot = ReductionKernel(self.context, numpy.float32, neutral="0",
                 reduce_expr="a+b", map_expr="dot(x[i].s0123,y[i].s0123)+dot(x[i].s4567,y[i].s4567)",
                 arguments="__global float8 *x, __global float8 *y")
-    
+
 
     def init_data(self):
         """Set up the data OpenCL will store on the device."""
@@ -298,7 +298,7 @@ class CLBacterium:
         self.fr_ents_dev = cl_array.zeros(self.queue, mat_geom, vec.float8)
         self.to_ents = numpy.zeros(mat_geom, vec.float8)
         self.to_ents_dev = cl_array.zeros(self.queue, mat_geom, vec.float8)
-        
+
 
         # vectors and intermediates
         self.deltap = numpy.zeros(cell_geom, vec.float8)
@@ -314,7 +314,7 @@ class CLBacterium:
         self.Ap_dev = cl_array.zeros(self.queue, cell_geom, vec.float8)
         self.res_dev = cl_array.zeros(self.queue, cell_geom, vec.float8)
         self.rhs_dev = cl_array.zeros(self.queue, cell_geom, vec.float8)
-    
+
 
     def load_from_cellstates(self, cell_states):
         for (cid,cs) in list(cell_states.items()):
@@ -323,7 +323,7 @@ class CLBacterium:
             self.cell_dirs[i] = tuple(cs.dir)+(0,)
             self.cell_rads[i] = cs.radius
             self.cell_lens[i] = cs.length
-        
+
         self.n_cells = len(cell_states)
         self.set_cells()
         self.calc_cell_area(self.cell_areas_dev, self.cell_rads_dev, self.cell_lens_dev)
@@ -493,8 +493,8 @@ class CLBacterium:
                         if ii!=self.n_cells-1 or jj!=6:
                             opstring = opstring + '\t'
                 opstring = opstring + '\n'
-        print("MTM")
-        print(opstring)
+        #print("MTM")
+        #print(opstring)
         open('CellModeller/Biophysics/BacterialModels/matrix.mat', 'w').write(opstring)
 
 
@@ -522,11 +522,11 @@ class CLBacterium:
 
     def progress_init(self, dt):
         self.set_cells()
-        # NOTE: by default self.dt=None, and time step == simulator time step (dt) 
+        # NOTE: by default self.dt=None, and time step == simulator time step (dt)
         if self.dt:
-            self.n_ticks = int(math.ceil(dt/self.dt)) 
+            self.n_ticks = int(math.ceil(dt/self.dt))
         else:
-            self.n_ticks = 1 
+            self.n_ticks = 1
         # print("n_ticks = %d"%(self.n_ticks))
         self.actual_dt = dt / float(self.n_ticks)
         self.progress_initialised = True
@@ -543,10 +543,13 @@ class CLBacterium:
         self.frame_no += 1
         self.progress_initialised = False
         self.seconds_elapsed = numpy.float32(time.time() - self.time_begin)
-        self.minutes_elapsed = (numpy.float32(self.seconds_elapsed) / 60.0)  
-        self.hours_elapsed = (numpy.float32(self.minutes_elapsed) / 60.0)  
+        self.minutes_elapsed = (numpy.float32(self.seconds_elapsed) / 60.0)
+        self.hours_elapsed = (numpy.float32(self.minutes_elapsed) / 60.0)
         if self.frame_no % 10 == 0:
-            print('% 8i    % 8i cells    % 8i contacts    %f hour(s) or %f minute(s) or %f second(s)' % (self.frame_no, self.n_cells, self.n_cts, self.hours_elapsed, self.minutes_elapsed, self.seconds_elapsed))
+            #print('% 8i    % 8i cells    % 8i contacts    %f hour(s) or %f minute(s) or %f second(s)' % (self.frame_no, self.n_cells, self.n_cts, self.hours_elapsed, self.minutes_elapsed, self.seconds_elapsed))
+            print(" ")
+            for i in range(100):
+                print(self.cell_centers[i][0]," ",self.cell_centers[i][1], " ",self.cell_dirs[i][0]," ",self.cell_dirs[i][1], " ", self.cell_lens[i])
         # pull cells from the device and update simulator
         if self.simulator:
             self.get_cells()
@@ -640,7 +643,7 @@ class CLBacterium:
         state.length = self.cell_lens[i]
         #for effective growth calulations
         state.oldLen = self.cell_lens[i]
-        
+
         state.volume = state.length # TO DO: do something better here
         pa = numpy.array(state.pos)
         da = numpy.array(state.dir)
@@ -907,7 +910,7 @@ class CLBacterium:
                                   self.fr_ents_dev.data,
                                   self.to_ents_dev.data,
                                   self.ct_stiff_dev.data).wait()
-    
+
 
     def calculate_Ax(self, Ax, x, dt, alpha):
 
@@ -952,7 +955,7 @@ class CLBacterium:
         #self.vaddkx(Ax, alpha, self.Mx_dev, Ax).wait()
         self.vaddkx(Ax, 1/self.gamma, Ax, self.Mx_dev).wait()
         # 1/math.sqrt(self.n_cells) removed from the reg_param NB
-    
+
         #print(self.Minvx_dev)
 
     def CGSSolve(self, dt, alpha, substep=False):
@@ -988,16 +991,16 @@ class CLBacterium:
         rsold = self.vdot(self.res_dev[0:self.n_cells], self.res_dev[0:self.n_cells]).get()
         rsfirst = rsold
         if math.sqrt(rsold/self.n_cells) < self.cgs_tol:
-            if self.printing and self.frame_no%10==0:
-                print('% 5i'%self.frame_no + '% 6i cells  % 6i cts  % 6i iterations  residual = %f' % (self.n_cells,
-            self.n_cts, 0, math.sqrt(rsold/self.n_cells)))
+            #if self.printing and self.frame_no%10==0:
+                #print('% 5i'%self.frame_no + '% 6i cells  % 6i cts  % 6i iterations  residual = %f' % (self.n_cells,
+            #self.n_cts, 0, math.sqrt(rsold/self.n_cells)))
             return (0.0, rsold)
 
         # iterate
         # max iters = matrix dimension = 7 (dofs) * num cells
         #dying=False
         max_iters = self.n_cells*7
-            
+
         for iter in range(max_iters):
             # Ap
             self.calculate_Ax(self.Ap_dev[0:self.n_cells], self.p_dev[0:self.n_cells], dt, alpha)
@@ -1032,8 +1035,8 @@ class CLBacterium:
             rsold = rsnew
             #print '        ',iter,rsold
 
-        if self.printing and self.frame_no%10==0:
-            print('% 5i'%self.frame_no + '% 6i cells  % 6i cts  % 6i iterations  residual = %f' % (self.n_cells, self.n_cts, iter+1, math.sqrt(rsnew/self.n_cells)))
+        #if self.printing and self.frame_no%10==0:
+            #print('% 5i'%self.frame_no + '% 6i cells  % 6i cts  % 6i iterations  residual = %f' % (self.n_cells, self.n_cts, iter+1, math.sqrt(rsnew/self.n_cells)))
         return (iter+1, math.sqrt(rsnew/self.n_cells))
 
 
@@ -1234,7 +1237,7 @@ class CLBacterium:
             self.compact_cts()
             self.ct_inds_dev.set(self.ct_inds)
         t2 = time.clock()
-        print("Find contacts timing for 1000 calls, time per call (s) = %f"%((t2-t1)*0.001))
+        #print("Find contacts timing for 1000 calls, time per call (s) = %f"%((t2-t1)*0.001))
         open("findcts_prof","a").write( "%i, %i, %f\n"%(self.n_cells,self.n_cts,(t2-t1)*0.001) )
 
     def profileCGS(self):
@@ -1246,9 +1249,7 @@ class CLBacterium:
         for i in range(1000):
             self.build_matrix(dt) # Calculate entries of the matrix
             (iters, res) = self.CGSSolve()
-            print("cgs prof: iters=%i, res=%f"%(iters,res))
+            #print("cgs prof: iters=%i, res=%f"%(iters,res))
         t2 = time.clock()
-        print("CGS timing for 1000 calls, time per call (s) = %f"%((t2-t1)*0.001))
+        #print("CGS timing for 1000 calls, time per call (s) = %f"%((t2-t1)*0.001))
         open("cgs_prof","a").write( "%i, %i, %i, %f\n"%(self.n_cells,self.n_cts,iters,(t2-t1)*0.001) )
-
-
